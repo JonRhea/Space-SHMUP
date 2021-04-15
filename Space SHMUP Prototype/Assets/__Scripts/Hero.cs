@@ -11,15 +11,20 @@ public class Hero : MonoBehaviour
 	public float speed = 30;
 	public float rollMult = -45;
 	public float pitchMult = 30;
+	public float gameRestartDelay = 2f;
+	public GameObject projectilePrefab;
+	public float projectileSpeed = 40;
 	
 	[Header("Set Dynamically")]
-	public float shieldLevel = 1;
+	[SerializeField]
+	private float _shieldLevel = 1;
+	private GameObject lastTriggerGo = null;
 	
 	void Awake() {
 		if (S == null) {
-		S = this; // Set the Singleton 
+			S = this; // Set the Singleton 
 		} else {
-		Debug.LogError("Hero.Awake() - Attempted to assign second Hero.S!");
+			Debug.LogError("Hero.Awake() - Attempted to assign second Hero.S!");
 		}
 	}//end Awake()
 	
@@ -34,6 +39,51 @@ public class Hero : MonoBehaviour
 		transform.position = pos;
 		// Rotate the ship to make it feel more dynamic 
 		transform.rotation = Quaternion.Euler(yAxis*pitchMult,xAxis*rollMult,0);
+		
+		if ( Input.GetKeyDown( KeyCode.Space ) ) { 
+			TempFire();
+		}//end if
+
 	}//end Update()
+	
+	void TempFire() { 
+		GameObject projGO = Instantiate<GameObject>( projectilePrefab );
+		projGO.transform.position = transform.position;
+		Rigidbody rigidB = projGO.GetComponent<Rigidbody>();
+		rigidB.velocity = Vector3.up * projectileSpeed;
+	}
+
+	void OnTriggerEnter(Collider other) {
+		Transform rootT = other.gameObject.transform.root;
+		GameObject go = rootT.gameObject;
+		//print("Triggered: "+go.name);
+		
+		if (go == lastTriggerGo) { 
+			return;
+		}
+		lastTriggerGo = go; 
+		
+		if (go.tag == "Enemy") { // If the shield was triggered by an enemy
+			shieldLevel--; // Decrease the level of the shield by 1
+			Destroy(go); // … and Destroy the enemy 
+		} else {
+			print( "Triggered by non-Enemy: "+go.name); 
+		}
+	}
+	
+	public float shieldLevel {
+		get {
+			return( _shieldLevel ); // a
+		}//end get
+		set {
+			_shieldLevel = Mathf.Min( value,4 ); // b
+			// If the shield is going to be set to less than zero
+			if (value < 0) { // c
+				Destroy(this.gameObject);
+				Main.S.DelayedRestart(gameRestartDelay);
+			}//end if
+		}//end set
+	}
+
 
 }
