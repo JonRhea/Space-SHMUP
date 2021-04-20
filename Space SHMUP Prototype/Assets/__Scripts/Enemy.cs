@@ -31,7 +31,7 @@ public class Enemy : MonoBehaviour
     {
         Move();
 		
-		if ( bndCheck != null && bndCheck.offDown ) { // c
+		if ( bndCheck != null && bndCheck.offDown ) { 
 		// We're off the bottom, so destroy this GameObject
 			Destroy( gameObject );
 		}//end if
@@ -44,5 +44,14 @@ public class Enemy : MonoBehaviour
 		pos = tempPos;
 	}//end move
 
-    
+  
+	void OnCollisionEnter( Collision coll ) {
+		GameObject otherGO = coll.gameObject; 
+		if ( otherGO.tag == "ProjectileHero") { 
+			Destroy( otherGO ); // Destroy the Projectile
+			Destroy( gameObject ); // Destroy this Enemy GameObject
+		} else {
+			print( "Enemy hit by non-ProjectileHero: " + otherGO.name ); 
+		}
+	}
 }
